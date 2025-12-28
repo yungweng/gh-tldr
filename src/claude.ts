@@ -1,5 +1,27 @@
 import { execa } from "execa";
+import { existsSync } from "node:fs";
+import { homedir } from "node:os";
+import { join } from "node:path";
 import type { GitHubActivity, Language, Verbosity } from "./types.js";
+
+function findClaudeCli(): string {
+	// Common installation paths for Claude CLI
+	const candidates = [
+		join(homedir(), ".local", "bin", "claude"),
+		join(homedir(), ".claude", "bin", "claude"),
+		"/usr/local/bin/claude",
+		"/opt/homebrew/bin/claude",
+	];
+
+	for (const path of candidates) {
+		if (existsSync(path)) {
+			return path;
+		}
+	}
+
+	// Fall back to PATH lookup
+	return "claude";
+}
 
 const wordLimits: Record<Verbosity, Record<Language, string>> = {
 	brief: { en: "20-40 word", de: "20-40 Wörter" },
@@ -35,9 +57,20 @@ export async function generateSummaryText(
 		args.push("--model", model);
 	}
 
-	const { stdout } = await execa("claude", args, {
-		input: fullPrompt,
-	});
+	const claudePath = findClaudeCli();
 
-	return stdout.trim();
+	try {
+		const { stdout } = await execa(claudePath, args, {
+			input: fullPrompt,
+		});
+		return stdout.trim();
+	} catch (error) {
+		if (error instanceof Error && "stderr" in error) {
+			const stderr = (error as { stderr: string }).stderr;
+			if (stderr) {
+				throw new Error(`Claude CLI failed: ${stderr}`);
+			}
+		}
+		throw error;
+	}
 }

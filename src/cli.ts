@@ -181,6 +181,15 @@ export async function run(): Promise<void> {
 			} catch (error) {
 				if (error instanceof Error) {
 					console.error(chalk.red(`Error: ${error.message}`));
+					if (error.message.includes("claude")) {
+						console.error(
+							chalk.yellow(
+								"Make sure Claude CLI is installed and authenticated: https://docs.anthropic.com/en/docs/claude-code",
+							),
+						);
+					}
+				} else {
+					console.error(chalk.red("An unexpected error occurred:"), error);
 				}
 				process.exit(1);
 			}
