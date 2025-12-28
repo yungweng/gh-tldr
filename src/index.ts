@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 // gh-tldr - Generate a TL;DR summary of your GitHub activity
 // Entry point: detects mode (interactive vs direct) and runs CLI
 
