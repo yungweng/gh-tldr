@@ -38,16 +38,16 @@ export async function runInteractive(): Promise<InteractiveOptions> {
   const format = await select({
     message: "Output format",
     choices: [
-      { name: "Slack", value: "slack" as OutputFormat },
-      { name: "Markdown", value: "markdown" as OutputFormat },
       { name: "Plain text", value: "plain" as OutputFormat },
+      { name: "Markdown", value: "markdown" as OutputFormat },
+      { name: "Slack", value: "slack" as OutputFormat },
     ],
-    default: "slack" as OutputFormat,
+    default: "plain" as OutputFormat,
   });
 
   const includePrivate = await confirm({
     message: "Include private repos?",
-    default: true,
+    default: false,
   });
 
   const model = await input({
