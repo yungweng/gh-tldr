@@ -1,6 +1,6 @@
 {
   "name": "gh-tldr",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Generate a TL;DR summary of your GitHub activity",
   "type": "module",
   "main": "dist/index.js",
