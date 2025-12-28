@@ -22,7 +22,7 @@ function formatActivityLine(
     case "markdown":
       return `- **${count}** ${label}${repoSuffix}`;
     case "plain":
-      return `${count} ${label}${repoSuffix}`;
+      return `• ${count} ${label}${repoSuffix}`;
     case "slack":
     default:
       return `• ${count} ${label}${repoSuffix}`;

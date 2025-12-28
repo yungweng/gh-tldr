@@ -2,7 +2,7 @@ import { Command } from "commander";
 import chalk from "chalk";
 import { fetchGitHubActivity, getAuthenticatedUser } from "./github.js";
 import { formatActivity, hasActivity } from "./output.js";
-import { generateSummary } from "./claude.js";
+import { generateSummaryText } from "./claude.js";
 import { runInteractive } from "./interactive.js";
 import type { OutputFormat, Language } from "./types.js";
 
@@ -77,11 +77,19 @@ async function execute(
     return;
   }
 
+  // Format stats locally
+  const stats = formatActivity(activity, format, lang);
+
   console.error(chalk.yellow("Generating summary with Claude..."));
 
-  const summary = await generateSummary(activity, lang, model);
+  // Only ask Claude for the summary paragraph
+  const summaryText = await generateSummaryText(activity, lang, model);
+
   console.log("");
-  console.log(summary);
+  console.log(stats);
+  console.log("");
+  console.log("---");
+  console.log(summaryText);
 }
 
 export async function run(): Promise<void> {
