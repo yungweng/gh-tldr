@@ -1,4 +1,40 @@
-import type { GitHubActivity, Language, OutputFormat } from "./types.js";
+import type {
+	Commit,
+	GitHubActivity,
+	Language,
+	OutputFormat,
+} from "./types.js";
+
+function calculateWorkSession(
+	commits: Commit[],
+	lang: Language,
+): string | null {
+	if (commits.length < 2) return null;
+
+	const timestamps = commits.map((c) => new Date(c.date).getTime());
+	const earliest = Math.min(...timestamps);
+	const latest = Math.max(...timestamps);
+
+	const durationMs = latest - earliest;
+	const durationHours = durationMs / (1000 * 60 * 60);
+
+	// Round to nearest 0.5 hours
+	const rounded = Math.round(durationHours * 2) / 2;
+
+	if (rounded < 0.5) return null;
+
+	const label = lang === "en" ? "Work session" : "Arbeitszeit";
+	const hoursLabel =
+		rounded === 1
+			? lang === "en"
+				? "hour"
+				: "Stunde"
+			: lang === "en"
+				? "hours"
+				: "Stunden";
+
+	return `${label}: ~${rounded} ${hoursLabel}`;
+}
 
 function getRepoNames(items: { repo: string }[]): string {
 	const repos = [...new Set(items.map((i) => i.repo))];
@@ -105,6 +141,13 @@ export function formatActivity(
 	}
 
 	lines.push(...activityLines);
+
+	// Work session duration
+	const workSession = calculateWorkSession(activity.commits, lang);
+	if (workSession) {
+		lines.push(format === "markdown" ? `- ${workSession}` : `• ${workSession}`);
+	}
+
 	lines.push("");
 
 	// Repos touched
