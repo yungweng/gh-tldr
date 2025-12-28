@@ -23,6 +23,26 @@ function findClaudeCli(): string {
 	return "claude";
 }
 
+function getShellEnv(): Record<string, string> {
+	// Ensure we have a proper PATH that includes common bin directories
+	const currentPath = process.env.PATH || "";
+	const home = homedir();
+	const additionalPaths = [
+		join(home, ".local", "bin"),
+		join(home, ".claude", "bin"),
+		"/usr/local/bin",
+		"/opt/homebrew/bin",
+	];
+
+	const newPath = [...additionalPaths, currentPath].join(":");
+
+	return {
+		...process.env,
+		PATH: newPath,
+		HOME: home,
+	};
+}
+
 const wordLimits: Record<Verbosity, Record<Language, string>> = {
 	brief: { en: "20-40 word", de: "20-40 Wörter" },
 	normal: { en: "50-80 word", de: "50-80 Wörter" },
@@ -58,19 +78,37 @@ export async function generateSummaryText(
 	}
 
 	const claudePath = findClaudeCli();
+	console.error(`[DEBUG] Claude path: ${claudePath}`);
+	console.error(`[DEBUG] Claude exists: ${existsSync(claudePath)}`);
+	console.error(`[DEBUG] HOME: ${homedir()}`);
 
 	try {
-		const { stdout } = await execa(claudePath, args, {
+		const result = await execa(claudePath, args, {
 			input: fullPrompt,
+			env: getShellEnv(),
 		});
-		return stdout.trim();
+		return result.stdout.trim();
 	} catch (error) {
-		if (error instanceof Error && "stderr" in error) {
-			const stderr = (error as { stderr: string }).stderr;
-			if (stderr) {
-				throw new Error(`Claude CLI failed: ${stderr}`);
-			}
-		}
-		throw error;
+		// Capture all error details
+		const execaError = error as {
+			message?: string;
+			stderr?: string;
+			stdout?: string;
+			exitCode?: number;
+			command?: string;
+		};
+
+		const details = [
+			`Command: ${execaError.command || claudePath}`,
+			`Exit code: ${execaError.exitCode}`,
+			execaError.stderr ? `Stderr: ${execaError.stderr}` : null,
+			execaError.stdout ? `Stdout: ${execaError.stdout}` : null,
+		]
+			.filter(Boolean)
+			.join("\n");
+
+		throw new Error(
+			`Claude CLI failed:\n${details}\n\nOriginal error: ${execaError.message || error}`,
+		);
 	}
 }
