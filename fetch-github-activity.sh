@@ -77,7 +77,7 @@ ISSUES_CLOSED=$(gh api -X GET "search/issues" \
     url: .html_url
   })')
 
-# Fetch commits by user (captures new repos via "Initial commit" etc)
+# Fetch commits by user
 echo "Fetching commits..." >&2
 COMMITS=$(gh api -X GET "search/commits" \
   -f q="author:$USERNAME committer-date:>=$SINCE" \
@@ -88,6 +88,9 @@ COMMITS=$(gh api -X GET "search/commits" \
     message: (.commit.message | split("\n")[0]),
     url: .html_url
   })')
+
+# Extract new repos from commits with "initial/init/first" anywhere in message
+REPOS_CREATED=$(echo "$COMMITS" | jq '[.[] | select(.message | ascii_downcase | test("initial|^init |first commit")) | {name: .repo, org: .org}] | unique')
 
 # Combine all data and extract unique repos
 ALL_REPOS=$(echo "$PRS_CREATED $PRS_MERGED $PRS_REVIEWED $ISSUES_CREATED $ISSUES_CLOSED $COMMITS" | \
@@ -104,6 +107,7 @@ jq -n \
   --argjson issues_created "$ISSUES_CREATED" \
   --argjson issues_closed "$ISSUES_CLOSED" \
   --argjson commits "$COMMITS" \
+  --argjson repos_created "$REPOS_CREATED" \
   --argjson repos "$ALL_REPOS" \
   '{
     user: $user,
@@ -115,5 +119,6 @@ jq -n \
     issues_created: $issues_created,
     issues_closed: $issues_closed,
     commits: $commits,
+    repos_created: $repos_created,
     repos_touched: $repos
   }'

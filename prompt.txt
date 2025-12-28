@@ -23,7 +23,7 @@ Repos: liste-der-repos
 - Zeige nur Kategorien mit Aktivität (wenn 0, weglasse die Zeile)
 - Bei den Repo-Namen: nur den Repo-Namen ohne Org, außer es gibt Namenskonflikte
 - Die Zusammenfassung soll die PR/Issue-Titel nutzen um zu erklären WAS gemacht wurde
-- WICHTIG: Schau dir die Commits an - wenn du "Initial commit", "init", "first commit" o.ä. siehst, wurde ein neues Repo erstellt. Erwähne das!
+- Das Feld "repos_created" enthält die neu erstellten Repos - nutze diese Liste direkt für die Zeile "X neue Repos erstellt"
 - Die Commits geben dir Kontext was genau gemacht wurde, nutze das für die Zusammenfassung
 - Halte es kurz und auf den Punkt
 - Keine Emojis
