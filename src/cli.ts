@@ -4,7 +4,7 @@ import { generateSummaryText } from "./claude.js";
 import { fetchGitHubActivity, getAuthenticatedUser } from "./github.js";
 import { runInteractive } from "./interactive.js";
 import { formatActivity, hasActivity } from "./output.js";
-import type { Language, OutputFormat } from "./types.js";
+import type { Language, OutputFormat, Verbosity } from "./types.js";
 
 async function checkDependencies(): Promise<void> {
 	const { execa } = await import("execa");
@@ -53,7 +53,13 @@ interface CliOptions {
 	format: OutputFormat;
 	publicOnly: boolean;
 	interactive: boolean;
+	verbosity: string;
 	model?: string;
+}
+
+function validateVerbosity(value: string): Verbosity {
+	const valid: Verbosity[] = ["brief", "normal", "detailed"];
+	return valid.includes(value as Verbosity) ? (value as Verbosity) : "normal";
 }
 
 async function execute(
@@ -62,6 +68,7 @@ async function execute(
 	lang: Language,
 	format: OutputFormat,
 	publicOnly: boolean,
+	verbosity: Verbosity,
 	model?: string,
 ): Promise<void> {
 	// Resolve username
@@ -95,7 +102,12 @@ async function execute(
 	console.error(chalk.yellow("Generating summary with Claude..."));
 
 	// Only ask Claude for the summary paragraph
-	const summaryText = await generateSummaryText(activity, lang, model);
+	const summaryText = await generateSummaryText(
+		activity,
+		lang,
+		verbosity,
+		model,
+	);
 
 	console.log("");
 	console.log(stats);
@@ -122,6 +134,11 @@ export async function run(): Promise<void> {
 		.option("-p, --public-only", "Exclude private repositories", false)
 		.option("-i, --interactive", "Force interactive mode", false)
 		.option(
+			"-v, --verbosity <level>",
+			"Summary verbosity: brief|normal|detailed",
+			"normal",
+		)
+		.option(
 			"-m, --model <model>",
 			"Claude model to use (e.g., sonnet, opus, haiku)",
 		)
@@ -142,6 +159,7 @@ export async function run(): Promise<void> {
 						answers.language,
 						answers.format,
 						!answers.includePrivate,
+						answers.verbosity,
 						answers.model || undefined,
 					);
 				} else {
@@ -156,6 +174,7 @@ export async function run(): Promise<void> {
 						lang,
 						format,
 						options.publicOnly,
+						validateVerbosity(options.verbosity),
 						options.model,
 					);
 				}

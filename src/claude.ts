@@ -1,20 +1,33 @@
 import { execa } from "execa";
-import type { GitHubActivity, Language } from "./types.js";
+import type { GitHubActivity, Language, Verbosity } from "./types.js";
 
-const summaryPromptEn = `Based on this GitHub activity data, write a brief 2-4 sentence summary of what was accomplished. Mention specific PR/issue titles to provide context. Write casually and informally. No bullet points, just a paragraph. No emojis.
+const wordLimits: Record<Verbosity, Record<Language, string>> = {
+	brief: { en: "20-40 word", de: "20-40 Wörter" },
+	normal: { en: "50-80 word", de: "50-80 Wörter" },
+	detailed: { en: "150-200 word", de: "150-200 Wörter" },
+};
+
+function buildPrompt(lang: Language, verbosity: Verbosity): string {
+	const limit = wordLimits[verbosity][lang];
+
+	if (lang === "en") {
+		return `Based on this GitHub activity data, write a summary of what was accomplished. STRICT LIMIT: ${limit}. Mention specific PR/issue titles. Casual tone, no bullet points, no emojis.
 
 GitHub Activity Data:`;
+	}
 
-const summaryPromptDe = `Basierend auf diesen GitHub-Aktivitätsdaten, schreibe eine kurze Zusammenfassung in 2-4 Sätzen was gemacht wurde. Erwähne konkret die PR/Issue-Titel um Kontext zu geben. Schreibe locker und informell. Keine Aufzählungen, nur ein Absatz. Keine Emojis.
+	return `Basierend auf diesen GitHub-Aktivitätsdaten, schreibe eine Zusammenfassung was gemacht wurde. STRIKTES LIMIT: ${limit}. Erwähne konkret die PR/Issue-Titel. Lockerer Ton, keine Aufzählungen, keine Emojis.
 
 GitHub-Aktivitätsdaten:`;
+}
 
 export async function generateSummaryText(
 	activity: GitHubActivity,
 	lang: Language,
+	verbosity: Verbosity = "normal",
 	model?: string,
 ): Promise<string> {
-	const prompt = lang === "en" ? summaryPromptEn : summaryPromptDe;
+	const prompt = buildPrompt(lang, verbosity);
 	const fullPrompt = `${prompt}\n${JSON.stringify(activity, null, 2)}`;
 
 	const args = ["-p", "-", "--output-format", "text"];

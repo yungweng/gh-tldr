@@ -1,10 +1,11 @@
 import { confirm, input, select } from "@inquirer/prompts";
-import type { Language, OutputFormat } from "./types.js";
+import type { Language, OutputFormat, Verbosity } from "./types.js";
 
 interface InteractiveOptions {
 	username: string;
 	days: number;
 	language: Language;
+	verbosity: Verbosity;
 	format: OutputFormat;
 	includePrivate: boolean;
 	model: string;
@@ -35,6 +36,16 @@ export async function runInteractive(): Promise<InteractiveOptions> {
 		default: "en" as Language,
 	});
 
+	const verbosity = await select({
+		message: "Summary verbosity",
+		choices: [
+			{ name: "Brief (~30 words)", value: "brief" as Verbosity },
+			{ name: "Normal (~60 words)", value: "normal" as Verbosity },
+			{ name: "Detailed (~175 words)", value: "detailed" as Verbosity },
+		],
+		default: "normal" as Verbosity,
+	});
+
 	const format = await select({
 		message: "Output format",
 		choices: [
@@ -59,6 +70,7 @@ export async function runInteractive(): Promise<InteractiveOptions> {
 		username,
 		days,
 		language,
+		verbosity,
 		format,
 		includePrivate,
 		model,

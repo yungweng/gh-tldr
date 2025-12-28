@@ -53,3 +53,4 @@ export interface Options {
 
 export type OutputFormat = "slack" | "markdown" | "plain";
 export type Language = "en" | "de";
+export type Verbosity = "brief" | "normal" | "detailed";
