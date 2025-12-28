@@ -36,7 +36,34 @@ async function ghApi<T>(
   return JSON.parse(stdout) as T;
 }
 
+async function ghApiPaginated<T>(
+  endpoint: string,
+  params: Record<string, string>,
+  maxPages: number = 10
+): Promise<T[]> {
+  const allItems: T[] = [];
+  let page = 1;
+
+  while (page <= maxPages) {
+    const result = await ghApi<SearchResult<T>>(endpoint, {
+      ...params,
+      page: String(page),
+      per_page: "100",
+    });
+
+    allItems.push(...result.items);
+
+    if (result.items.length < 100) {
+      break;
+    }
+    page++;
+  }
+
+  return allItems;
+}
+
 interface SearchResult<T> {
+  total_count?: number;
   items: T[];
 }
 
@@ -54,6 +81,13 @@ interface RawCommit {
     owner: { login: string };
   };
   commit: { message: string };
+  html_url: string;
+}
+
+interface RawRepo {
+  name: string;
+  owner: { login: string };
+  created_at: string;
   html_url: string;
 }
 
@@ -94,6 +128,88 @@ export async function getAuthenticatedUser(): Promise<string> {
   return stdout.trim();
 }
 
+async function fetchUserOrgs(username: string): Promise<string[]> {
+  // First try authenticated user's orgs (includes private memberships)
+  try {
+    const authUser = await getAuthenticatedUser();
+    if (authUser === username) {
+      const { stdout } = await execa("gh", [
+        "api",
+        "user/orgs",
+        "--jq",
+        ".[].login",
+      ]);
+      return stdout.trim().split("\n").filter(Boolean);
+    }
+  } catch {
+    // Fall through to public orgs
+  }
+
+  // Fallback to public orgs for other users
+  try {
+    const { stdout } = await execa("gh", [
+      "api",
+      `users/${username}/orgs`,
+      "--jq",
+      ".[].login",
+    ]);
+    return stdout.trim().split("\n").filter(Boolean);
+  } catch {
+    return [];
+  }
+}
+
+async function fetchReposCreatedSince(
+  username: string,
+  since: string,
+  publicOnly: boolean
+): Promise<RepoInfo[]> {
+  const sinceDate = new Date(since);
+  const repos: RepoInfo[] = [];
+
+  // Fetch user's own repos
+  try {
+    const visibility = publicOnly ? "public" : "all";
+    const { stdout } = await execa("gh", [
+      "api",
+      `users/${username}/repos?type=${visibility}&sort=created&direction=desc&per_page=100`,
+    ]);
+    const userRepos = JSON.parse(stdout) as RawRepo[];
+    for (const repo of userRepos) {
+      if (new Date(repo.created_at) >= sinceDate) {
+        repos.push({ name: repo.name, org: repo.owner.login });
+      }
+    }
+  } catch {
+    // Ignore errors for user repos
+  }
+
+  // Fetch repos from user's orgs
+  const orgs = await fetchUserOrgs(username);
+  for (const org of orgs) {
+    try {
+      const { stdout } = await execa("gh", [
+        "api",
+        `orgs/${org}/repos?sort=created&direction=desc&per_page=100`,
+      ]);
+      const orgRepos = JSON.parse(stdout) as RawRepo[];
+      for (const repo of orgRepos) {
+        if (new Date(repo.created_at) >= sinceDate) {
+          repos.push({ name: repo.name, org: repo.owner.login });
+        }
+      }
+    } catch {
+      // Ignore errors for individual orgs
+    }
+  }
+
+  // Deduplicate
+  return repos.filter(
+    (repo, index, self) =>
+      self.findIndex((r) => r.name === repo.name && r.org === repo.org) === index
+  );
+}
+
 export async function fetchGitHubActivity(
   username: string,
   days: number,
@@ -103,57 +219,43 @@ export async function fetchGitHubActivity(
   const today = formatDate(new Date());
   const visibilityFilter = publicOnly ? " is:public" : "";
 
-  // Fetch all data in parallel
+  // Fetch all data in parallel with pagination
   const [
-    prsCreatedResult,
-    prsMergedResult,
-    prsReviewedResult,
-    issuesCreatedResult,
-    issuesClosedResult,
-    commitsResult,
+    prsCreatedItems,
+    prsMergedItems,
+    prsReviewedItems,
+    issuesCreatedItems,
+    issuesClosedItems,
+    commitsItems,
+    repos_created,
   ] = await Promise.all([
-    ghApi<SearchResult<RawPR>>("search/issues", {
+    ghApiPaginated<RawPR>("search/issues", {
       q: `author:${username} type:pr created:>=${since}${visibilityFilter}`,
-      per_page: "100",
     }),
-    ghApi<SearchResult<RawPR>>("search/issues", {
+    ghApiPaginated<RawPR>("search/issues", {
       q: `author:${username} type:pr merged:>=${since}${visibilityFilter}`,
-      per_page: "100",
     }),
-    ghApi<SearchResult<RawPR>>("search/issues", {
-      q: `reviewed-by:${username} type:pr updated:>=${since} -author:${username}${visibilityFilter}`,
-      per_page: "100",
+    ghApiPaginated<RawPR>("search/issues", {
+      q: `reviewed-by:${username} type:pr created:>=${since} -author:${username}${visibilityFilter}`,
     }),
-    ghApi<SearchResult<RawPR>>("search/issues", {
+    ghApiPaginated<RawPR>("search/issues", {
       q: `author:${username} type:issue created:>=${since}${visibilityFilter}`,
-      per_page: "100",
     }),
-    ghApi<SearchResult<RawPR>>("search/issues", {
-      q: `involves:${username} type:issue closed:>=${since}${visibilityFilter}`,
-      per_page: "100",
+    ghApiPaginated<RawPR>("search/issues", {
+      q: `author:${username} type:issue closed:>=${since}${visibilityFilter}`,
     }),
-    ghApi<SearchResult<RawCommit>>("search/commits", {
+    ghApiPaginated<RawCommit>("search/commits", {
       q: `author:${username} committer-date:>=${since}`,
-      per_page: "100",
     }),
+    fetchReposCreatedSince(username, since, publicOnly),
   ]);
 
-  const prs_created = prsCreatedResult.items.map(parsePR);
-  const prs_merged = prsMergedResult.items.map(parsePR);
-  const prs_reviewed = prsReviewedResult.items.map(parsePR);
-  const issues_created = issuesCreatedResult.items.map(parseIssue);
-  const issues_closed = issuesClosedResult.items.map(parseIssue);
-  const commits = commitsResult.items.map(parseCommit);
-
-  // Extract new repos from commits with initial/init/first in message
-  const repos_created: RepoInfo[] = commits
-    .filter((c) => /initial|^init |first commit/i.test(c.message))
-    .map((c) => ({ name: c.repo, org: c.org }))
-    .filter(
-      (repo, index, self) =>
-        self.findIndex((r) => r.name === repo.name && r.org === repo.org) ===
-        index
-    );
+  const prs_created = prsCreatedItems.map(parsePR);
+  const prs_merged = prsMergedItems.map(parsePR);
+  const prs_reviewed = prsReviewedItems.map(parsePR);
+  const issues_created = issuesCreatedItems.map(parseIssue);
+  const issues_closed = issuesClosedItems.map(parseIssue);
+  const commits = commitsItems.map(parseCommit);
 
   // Extract unique repos touched
   const allRepos = [
