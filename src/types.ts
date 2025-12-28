@@ -48,6 +48,7 @@ export interface Options {
   format: "slack" | "markdown" | "plain";
   publicOnly: boolean;
   interactive: boolean;
+  model?: string;
 }
 
 export type OutputFormat = "slack" | "markdown" | "plain";

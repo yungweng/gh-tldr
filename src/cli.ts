@@ -47,6 +47,7 @@ interface CliOptions {
   format: OutputFormat;
   publicOnly: boolean;
   interactive: boolean;
+  model?: string;
 }
 
 async function execute(
@@ -54,7 +55,8 @@ async function execute(
   days: number,
   lang: Language,
   format: OutputFormat,
-  publicOnly: boolean
+  publicOnly: boolean,
+  model?: string
 ): Promise<void> {
   // Resolve username
   const resolvedUsername = username || (await getAuthenticatedUser());
@@ -77,7 +79,7 @@ async function execute(
 
   console.error(chalk.yellow("Generating summary with Claude..."));
 
-  const summary = await generateSummary(activity, lang);
+  const summary = await generateSummary(activity, lang, model);
   console.log("");
   console.log(summary);
 }
@@ -95,6 +97,7 @@ export async function run(): Promise<void> {
     .option("-f, --format <type>", "Output format: slack|markdown|plain", "slack")
     .option("-p, --public-only", "Exclude private repositories", false)
     .option("-i, --interactive", "Force interactive mode", false)
+    .option("-m, --model <model>", "Claude model to use (e.g., sonnet, opus, haiku)")
     .action(async (username: string | undefined, options: CliOptions) => {
       try {
         await checkDependencies();
@@ -111,7 +114,8 @@ export async function run(): Promise<void> {
             answers.days,
             answers.language,
             answers.format,
-            !answers.includePrivate
+            !answers.includePrivate,
+            answers.model || undefined
           );
         } else {
           // Direct mode
@@ -119,7 +123,7 @@ export async function run(): Promise<void> {
           const lang: Language = options.english ? "en" : "de";
           const format = options.format as OutputFormat;
 
-          await execute(username || "", days, lang, format, options.publicOnly);
+          await execute(username || "", days, lang, format, options.publicOnly, options.model);
         }
       } catch (error) {
         if (error instanceof Error) {

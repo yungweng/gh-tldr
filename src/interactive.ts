@@ -1,5 +1,5 @@
 import { input, select, confirm } from "@inquirer/prompts";
-import type { Options, OutputFormat, Language } from "./types.js";
+import type { OutputFormat, Language } from "./types.js";
 
 interface InteractiveOptions {
   username: string;
@@ -7,6 +7,7 @@ interface InteractiveOptions {
   language: Language;
   format: OutputFormat;
   includePrivate: boolean;
+  model: string;
 }
 
 export async function runInteractive(): Promise<InteractiveOptions> {
@@ -49,11 +50,17 @@ export async function runInteractive(): Promise<InteractiveOptions> {
     default: true,
   });
 
+  const model = await input({
+    message: "Claude model (leave empty for default)",
+    default: "",
+  });
+
   return {
     username,
     days,
     language,
     format,
     includePrivate,
+    model,
   };
 }
