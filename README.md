@@ -1,16 +1,16 @@
 # gh-tldr
 
-Generates a TL;DR summary of your GitHub activity from the last 24 hours for Slack.
+Generate a TL;DR summary of your GitHub activity using Claude.
 
 ## Prerequisites
 
+- [Node.js](https://nodejs.org/) >= 18
 - [GitHub CLI](https://cli.github.com/) (`gh`) - authenticated
-- [jq](https://jqlang.github.io/jq/)
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) (`claude`)
 
 ```bash
 # macOS
-brew install gh jq
+brew install gh node
 
 # Authenticate gh
 gh auth login
@@ -19,33 +19,87 @@ gh auth login
 ## Installation
 
 ```bash
-# Clone repo
-git clone https://github.com/YOUR_USER/gh-tldr.git
+# Clone and install
+git clone https://github.com/moto-nrw/gh-tldr.git
 cd gh-tldr
+pnpm install
+pnpm build
 
-# Optional: Symlink to PATH
-ln -s "$(pwd)/gh-tldr" /usr/local/bin/gh-tldr
+# Link globally
+pnpm link --global
+```
+
+Or via npx (once published):
+```bash
+npx gh-tldr
 ```
 
 ## Usage
 
-```bash
-# Your own activity (uses gh auth user)
-./gh-tldr
+### Interactive Mode
 
-# Specific user
-./gh-tldr yungweng
+Run without arguments for guided prompts:
+
+```bash
+gh-tldr
+```
+
+```
+? GitHub username (leave empty for authenticated user)
+? Time period › Last 24 hours / Last 7 days / Last 30 days
+? Language › English / German
+? Output format › Plain text / Markdown / Slack
+? Include private repos? (y/N)
+? Claude model (leave empty for default)
+```
+
+### Direct Mode
+
+Use flags for scripting:
+
+```bash
+# Basic usage
+gh-tldr --days 7 --english
+
+# All options
+gh-tldr [username] [options]
+
+Options:
+  -d, --days <n>       Time period in days (default: 1)
+  -e, --english        Output in English (default: German)
+  -f, --format <type>  Output format: plain|markdown|slack (default: slack)
+  -p, --public-only    Exclude private repositories
+  -m, --model <model>  Claude model (e.g., haiku, sonnet, opus)
+  -i, --interactive    Force interactive mode
+  -h, --help           Show help
+```
+
+### Examples
+
+```bash
+# Last 7 days in English
+gh-tldr --days 7 --english
+
+# Specific user, public repos only
+gh-tldr yungweng --public-only
+
+# Use Haiku model for faster results
+gh-tldr --model haiku
+
+# Markdown output for documentation
+gh-tldr --days 30 --format markdown
 ```
 
 ## Output
 
 ```
-tl;dr 28.12
+tl;dr 28.12.2025
 
 • 3 PRs created (repo-a, repo-b)
-• 5 PRs reviewed/approved (repo-c)
+• 5 PRs reviewed (repo-c)
 • 2 PRs merged (repo-a)
-• 1 Issue closed (repo-d)
+• 1 issue closed (repo-d)
+• 12 commits (repo-a, repo-b)
 
 Repos: org/repo-a, org/repo-b, org/repo-c, org/repo-d
 
@@ -54,7 +108,19 @@ Mainly worked on Feature X. Completed and merged PR "Add user authentication".
 Did several code reviews for the team, including the new API endpoint.
 ```
 
-## Customization
+## Development
 
-- **Modify prompt:** Edit `prompt.txt` for a different output style
-- **Change time period:** Adjust the `SINCE` parameter in `fetch-github-activity.sh`
+```bash
+# Run in dev mode
+pnpm dev
+
+# Build
+pnpm build
+
+# Type check
+pnpm typecheck
+```
+
+## License
+
+MIT
