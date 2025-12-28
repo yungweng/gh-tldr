@@ -10,21 +10,21 @@ const summaryPromptDe = `Basierend auf diesen GitHub-Aktivitätsdaten, schreibe 
 GitHub-Aktivitätsdaten:`;
 
 export async function generateSummaryText(
-  activity: GitHubActivity,
-  lang: Language,
-  model?: string
+	activity: GitHubActivity,
+	lang: Language,
+	model?: string,
 ): Promise<string> {
-  const prompt = lang === "en" ? summaryPromptEn : summaryPromptDe;
-  const fullPrompt = `${prompt}\n${JSON.stringify(activity, null, 2)}`;
+	const prompt = lang === "en" ? summaryPromptEn : summaryPromptDe;
+	const fullPrompt = `${prompt}\n${JSON.stringify(activity, null, 2)}`;
 
-  const args = ["-p", "-", "--output-format", "text"];
-  if (model) {
-    args.push("--model", model);
-  }
+	const args = ["-p", "-", "--output-format", "text"];
+	if (model) {
+		args.push("--model", model);
+	}
 
-  const { stdout } = await execa("claude", args, {
-    input: fullPrompt,
-  });
+	const { stdout } = await execa("claude", args, {
+		input: fullPrompt,
+	});
 
-  return stdout.trim();
+	return stdout.trim();
 }
