@@ -47,7 +47,7 @@ export async function runInteractive(): Promise<InteractiveOptions> {
 
   const includePrivate = await confirm({
     message: "Include private repos?",
-    default: false,
+    default: true,
   });
 
   const model = await input({
