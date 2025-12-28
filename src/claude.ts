@@ -9,12 +9,9 @@ export async function generateSummary(
   const prompt = getPrompt(lang);
   const fullPrompt = `${prompt}\n${JSON.stringify(activity, null, 2)}`;
 
-  const { stdout } = await execa("claude", [
-    "-p",
-    fullPrompt,
-    "--output-format",
-    "text",
-  ]);
+  const { stdout } = await execa("claude", ["-p", "-", "--output-format", "text"], {
+    input: fullPrompt,
+  });
 
   return stdout;
 }
