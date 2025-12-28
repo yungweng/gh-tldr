@@ -1,0 +1,126 @@
+#!/bin/bash
+# Fetches GitHub activity for a user in the last 24 hours
+# Outputs JSON with all relevant data for Claude to summarize
+
+set -e
+
+# Get username from gh cli if not provided
+USERNAME="${1:-$(gh api user --jq '.login')}"
+SINCE=$(date -u -v-24H +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || date -u -d "24 hours ago" +"%Y-%m-%dT%H:%M:%SZ")
+TODAY=$(date +"%d.%m.%Y")
+
+echo "Fetching GitHub activity for $USERNAME since $SINCE..." >&2
+
+# Create temp file for collecting data
+TEMP_FILE=$(mktemp)
+trap "rm -f $TEMP_FILE" EXIT
+
+# Initialize JSON structure
+cat > "$TEMP_FILE" << EOF
+{
+  "user": "$USERNAME",
+  "date": "$TODAY",
+  "period": "letzte 24 Stunden",
+  "prs_created": [],
+  "prs_merged": [],
+  "prs_reviewed": [],
+  "issues_created": [],
+  "issues_closed": [],
+  "repos_touched": []
+}
+EOF
+
+# Fetch PRs created by user
+echo "Fetching PRs created..." >&2
+PRS_CREATED=$(gh api -X GET "search/issues" \
+  -f q="author:$USERNAME type:pr created:>=$SINCE" \
+  -f per_page=100 \
+  --jq '.items | map({
+    repo: (.repository_url | split("/") | .[-1]),
+    org: (.repository_url | split("/") | .[-2]),
+    title: .title,
+    number: .number,
+    state: .state,
+    url: .html_url
+  })')
+
+# Fetch PRs merged by user (as author)
+echo "Fetching PRs merged..." >&2
+PRS_MERGED=$(gh api -X GET "search/issues" \
+  -f q="author:$USERNAME type:pr merged:>=$SINCE" \
+  -f per_page=100 \
+  --jq '.items | map({
+    repo: (.repository_url | split("/") | .[-1]),
+    org: (.repository_url | split("/") | .[-2]),
+    title: .title,
+    number: .number,
+    url: .html_url
+  })')
+
+# Fetch PR reviews by user
+echo "Fetching PR reviews..." >&2
+# This requires searching through events - we'll use a different approach
+# Get all PRs where user left a review
+PRS_REVIEWED=$(gh api -X GET "search/issues" \
+  -f q="reviewed-by:$USERNAME type:pr updated:>=$SINCE -author:$USERNAME" \
+  -f per_page=100 \
+  --jq '.items | map({
+    repo: (.repository_url | split("/") | .[-1]),
+    org: (.repository_url | split("/") | .[-2]),
+    title: .title,
+    number: .number,
+    url: .html_url
+  })')
+
+# Fetch issues created by user
+echo "Fetching issues created..." >&2
+ISSUES_CREATED=$(gh api -X GET "search/issues" \
+  -f q="author:$USERNAME type:issue created:>=$SINCE" \
+  -f per_page=100 \
+  --jq '.items | map({
+    repo: (.repository_url | split("/") | .[-1]),
+    org: (.repository_url | split("/") | .[-2]),
+    title: .title,
+    number: .number,
+    url: .html_url
+  })')
+
+# Fetch issues closed by user (author OR assignee)
+echo "Fetching issues closed..." >&2
+ISSUES_CLOSED=$(gh api -X GET "search/issues" \
+  -f q="involves:$USERNAME type:issue closed:>=$SINCE" \
+  -f per_page=100 \
+  --jq '.items | map({
+    repo: (.repository_url | split("/") | .[-1]),
+    org: (.repository_url | split("/") | .[-2]),
+    title: .title,
+    number: .number,
+    url: .html_url
+  })')
+
+# Combine all data and extract unique repos
+ALL_REPOS=$(echo "$PRS_CREATED $PRS_MERGED $PRS_REVIEWED $ISSUES_CREATED $ISSUES_CLOSED" | \
+  jq -s 'add | map(.org + "/" + .repo) | unique')
+
+# Build final JSON
+jq -n \
+  --arg user "$USERNAME" \
+  --arg date "$TODAY" \
+  --arg period "letzte 24 Stunden" \
+  --argjson prs_created "$PRS_CREATED" \
+  --argjson prs_merged "$PRS_MERGED" \
+  --argjson prs_reviewed "$PRS_REVIEWED" \
+  --argjson issues_created "$ISSUES_CREATED" \
+  --argjson issues_closed "$ISSUES_CLOSED" \
+  --argjson repos "$ALL_REPOS" \
+  '{
+    user: $user,
+    date: $date,
+    period: $period,
+    prs_created: $prs_created,
+    prs_merged: $prs_merged,
+    prs_reviewed: $prs_reviewed,
+    issues_created: $issues_created,
+    issues_closed: $issues_closed,
+    repos_touched: $repos
+  }'
