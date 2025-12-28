@@ -1,10 +1,10 @@
 # gh-tldr
 
-Generiert eine TL;DR-Zusammenfassung deiner GitHub-Aktivität der letzten 24 Stunden für Slack.
+Generates a TL;DR summary of your GitHub activity from the last 24 hours for Slack.
 
-## Voraussetzungen
+## Prerequisites
 
-- [GitHub CLI](https://cli.github.com/) (`gh`) - authentifiziert
+- [GitHub CLI](https://cli.github.com/) (`gh`) - authenticated
 - [jq](https://jqlang.github.io/jq/)
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) (`claude`)
 
@@ -12,28 +12,28 @@ Generiert eine TL;DR-Zusammenfassung deiner GitHub-Aktivität der letzten 24 Stu
 # macOS
 brew install gh jq
 
-# gh authentifizieren
+# Authenticate gh
 gh auth login
 ```
 
 ## Installation
 
 ```bash
-# Repo klonen
-git clone https://github.com/DEIN_USER/gh-tldr.git
+# Clone repo
+git clone https://github.com/YOUR_USER/gh-tldr.git
 cd gh-tldr
 
-# Optional: Symlink in PATH
+# Optional: Symlink to PATH
 ln -s "$(pwd)/gh-tldr" /usr/local/bin/gh-tldr
 ```
 
-## Nutzung
+## Usage
 
 ```bash
-# Eigene Aktivität (nutzt gh auth user)
+# Your own activity (uses gh auth user)
 ./gh-tldr
 
-# Bestimmter User
+# Specific user
 ./gh-tldr yungweng
 ```
 
@@ -42,20 +42,19 @@ ln -s "$(pwd)/gh-tldr" /usr/local/bin/gh-tldr
 ```
 tl;dr 28.12
 
-• 3 PRs erstellt (repo-a, repo-b)
+• 3 PRs created (repo-a, repo-b)
 • 5 PRs reviewed/approved (repo-c)
-• 2 PRs gemerged (repo-a)
-• 1 Issue geschlossen (repo-d)
+• 2 PRs merged (repo-a)
+• 1 Issue closed (repo-d)
 
 Repos: org/repo-a, org/repo-b, org/repo-c, org/repo-d
 
 ---
-Hauptsächlich am Feature X gearbeitet. PR "Add user authentication"
-fertiggestellt und gemerged. Mehrere Code Reviews für das Team erledigt,
-u.a. für den neuen API-Endpoint.
+Mainly worked on Feature X. Completed and merged PR "Add user authentication".
+Did several code reviews for the team, including the new API endpoint.
 ```
 
-## Anpassungen
+## Customization
 
-- **Prompt anpassen:** Bearbeite `prompt.txt` für anderen Output-Style
-- **Zeitraum ändern:** In `fetch-github-activity.sh` den `SINCE` Parameter anpassen
+- **Modify prompt:** Edit `prompt.txt` for a different output style
+- **Change time period:** Adjust the `SINCE` parameter in `fetch-github-activity.sh`
