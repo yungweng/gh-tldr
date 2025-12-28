@@ -11,6 +11,7 @@ tl;dr [DATUM]
 • X PRs gemerged (repo-namen)
 • X Issues erstellt (repo-namen)
 • X Issues geschlossen (repo-namen)
+• X Commits (repo-namen)
 • X neue Repos erstellt (repo-namen)
 
 Repos: liste-der-repos
