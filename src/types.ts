@@ -20,6 +20,7 @@ export interface Commit {
 	org: string;
 	message: string;
 	url: string;
+	date: string;
 }
 
 export interface RepoInfo {

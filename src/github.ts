@@ -83,7 +83,10 @@ interface RawCommit {
 		name: string;
 		owner: { login: string };
 	};
-	commit: { message: string };
+	commit: {
+		message: string;
+		author: { date: string };
+	};
 	html_url: string;
 }
 
@@ -123,6 +126,7 @@ function parseCommit(item: RawCommit): Commit {
 		org: item.repository.owner.login,
 		message: item.commit.message.split("\n")[0],
 		url: item.html_url,
+		date: item.commit.author.date,
 	};
 }
 

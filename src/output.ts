@@ -1,4 +1,69 @@
-import type { GitHubActivity, Language, OutputFormat } from "./types.js";
+import type {
+	Commit,
+	GitHubActivity,
+	Language,
+	OutputFormat,
+} from "./types.js";
+
+// Gap threshold: if gap between commits > 3 hours, treat as separate session
+const GAP_THRESHOLD_MS = 3 * 60 * 60 * 1000;
+// Minimum time to count for a single-commit session (15 minutes)
+const SINGLE_COMMIT_HOURS = 0.25;
+
+function calculateWorkSession(
+	commits: Commit[],
+	lang: Language,
+): string | null {
+	if (commits.length < 2) return null;
+
+	// Sort timestamps chronologically
+	const timestamps = commits
+		.map((c) => new Date(c.date).getTime())
+		.sort((a, b) => a - b);
+
+	// Group commits into sessions based on gap threshold
+	const sessions: number[][] = [];
+	let currentSession = [timestamps[0]];
+
+	for (let i = 1; i < timestamps.length; i++) {
+		const gap = timestamps[i] - timestamps[i - 1];
+		if (gap > GAP_THRESHOLD_MS) {
+			sessions.push(currentSession);
+			currentSession = [timestamps[i]];
+		} else {
+			currentSession.push(timestamps[i]);
+		}
+	}
+	sessions.push(currentSession);
+
+	// Calculate total hours across all sessions
+	let totalHours = 0;
+	for (const session of sessions) {
+		if (session.length === 1) {
+			totalHours += SINGLE_COMMIT_HOURS;
+		} else {
+			const duration = session[session.length - 1] - session[0];
+			totalHours += duration / (1000 * 60 * 60);
+		}
+	}
+
+	// Round to nearest 0.5 hours
+	const rounded = Math.round(totalHours * 2) / 2;
+
+	if (rounded < 0.5) return null;
+
+	const label = lang === "en" ? "Work session" : "Arbeitszeit";
+	const hoursLabel =
+		rounded === 1
+			? lang === "en"
+				? "hour"
+				: "Stunde"
+			: lang === "en"
+				? "hours"
+				: "Stunden";
+
+	return `${label}: ~${rounded} ${hoursLabel}`;
+}
 
 function getRepoNames(items: { repo: string }[]): string {
 	const repos = [...new Set(items.map((i) => i.repo))];
@@ -105,6 +170,13 @@ export function formatActivity(
 	}
 
 	lines.push(...activityLines);
+
+	// Work session duration
+	const workSession = calculateWorkSession(activity.commits, lang);
+	if (workSession) {
+		lines.push(format === "markdown" ? `- ${workSession}` : `• ${workSession}`);
+	}
+
 	lines.push("");
 
 	// Repos touched
