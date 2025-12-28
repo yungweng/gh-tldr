@@ -89,26 +89,29 @@ export async function generateSummaryText(
 		});
 		return result.stdout.trim();
 	} catch (error) {
-		// Capture all error details
+		// Log the raw error immediately before any processing
+		process.stderr.write("\n=== EXECA ERROR (raw) ===\n");
+		try {
+			process.stderr.write(
+				JSON.stringify(error, Object.getOwnPropertyNames(error as object), 2),
+			);
+		} catch {
+			process.stderr.write(String(error));
+		}
+		process.stderr.write("\n=== END EXECA ERROR ===\n");
+
+		// Re-throw with details
 		const execaError = error as {
 			message?: string;
 			stderr?: string;
 			stdout?: string;
 			exitCode?: number;
 			command?: string;
+			shortMessage?: string;
 		};
 
-		const details = [
-			`Command: ${execaError.command || claudePath}`,
-			`Exit code: ${execaError.exitCode}`,
-			execaError.stderr ? `Stderr: ${execaError.stderr}` : null,
-			execaError.stdout ? `Stdout: ${execaError.stdout}` : null,
-		]
-			.filter(Boolean)
-			.join("\n");
-
 		throw new Error(
-			`Claude CLI failed:\n${details}\n\nOriginal error: ${execaError.message || error}`,
+			`Claude CLI failed: ${execaError.shortMessage || execaError.message || "Unknown error"}`,
 		);
 	}
 }
