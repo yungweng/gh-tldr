@@ -11,6 +11,7 @@ tl;dr [DATUM]
 • X PRs gemerged (repo-namen)
 • X Issues erstellt (repo-namen)
 • X Issues geschlossen (repo-namen)
+• X neue Repos erstellt (repo-namen)
 
 Repos: liste-der-repos
 
@@ -22,6 +23,8 @@ Repos: liste-der-repos
 - Zeige nur Kategorien mit Aktivität (wenn 0, weglasse die Zeile)
 - Bei den Repo-Namen: nur den Repo-Namen ohne Org, außer es gibt Namenskonflikte
 - Die Zusammenfassung soll die PR/Issue-Titel nutzen um zu erklären WAS gemacht wurde
+- WICHTIG: Schau dir die Commits an - wenn du "Initial commit", "init", "first commit" o.ä. siehst, wurde ein neues Repo erstellt. Erwähne das!
+- Die Commits geben dir Kontext was genau gemacht wurde, nutze das für die Zusammenfassung
 - Halte es kurz und auf den Punkt
 - Keine Emojis
 - Wenn keine Aktivität vorhanden ist, schreibe "Keine GitHub-Aktivität in den letzten 24 Stunden."

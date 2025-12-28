@@ -11,25 +11,6 @@ TODAY=$(date +"%d.%m.%Y")
 
 echo "Fetching GitHub activity for $USERNAME since $SINCE..." >&2
 
-# Create temp file for collecting data
-TEMP_FILE=$(mktemp)
-trap "rm -f $TEMP_FILE" EXIT
-
-# Initialize JSON structure
-cat > "$TEMP_FILE" << EOF
-{
-  "user": "$USERNAME",
-  "date": "$TODAY",
-  "period": "letzte 24 Stunden",
-  "prs_created": [],
-  "prs_merged": [],
-  "prs_reviewed": [],
-  "issues_created": [],
-  "issues_closed": [],
-  "repos_touched": []
-}
-EOF
-
 # Fetch PRs created by user
 echo "Fetching PRs created..." >&2
 PRS_CREATED=$(gh api -X GET "search/issues" \
@@ -59,8 +40,6 @@ PRS_MERGED=$(gh api -X GET "search/issues" \
 
 # Fetch PR reviews by user
 echo "Fetching PR reviews..." >&2
-# This requires searching through events - we'll use a different approach
-# Get all PRs where user left a review
 PRS_REVIEWED=$(gh api -X GET "search/issues" \
   -f q="reviewed-by:$USERNAME type:pr updated:>=$SINCE -author:$USERNAME" \
   -f per_page=100 \
@@ -98,8 +77,20 @@ ISSUES_CLOSED=$(gh api -X GET "search/issues" \
     url: .html_url
   })')
 
+# Fetch commits by user (captures new repos via "Initial commit" etc)
+echo "Fetching commits..." >&2
+COMMITS=$(gh api -X GET "search/commits" \
+  -f q="author:$USERNAME committer-date:>=$SINCE" \
+  -f per_page=100 \
+  --jq '.items | map({
+    repo: .repository.name,
+    org: .repository.owner.login,
+    message: (.commit.message | split("\n")[0]),
+    url: .html_url
+  })')
+
 # Combine all data and extract unique repos
-ALL_REPOS=$(echo "$PRS_CREATED $PRS_MERGED $PRS_REVIEWED $ISSUES_CREATED $ISSUES_CLOSED" | \
+ALL_REPOS=$(echo "$PRS_CREATED $PRS_MERGED $PRS_REVIEWED $ISSUES_CREATED $ISSUES_CLOSED $COMMITS" | \
   jq -s 'add | map(.org + "/" + .repo) | unique')
 
 # Build final JSON
@@ -112,6 +103,7 @@ jq -n \
   --argjson prs_reviewed "$PRS_REVIEWED" \
   --argjson issues_created "$ISSUES_CREATED" \
   --argjson issues_closed "$ISSUES_CLOSED" \
+  --argjson commits "$COMMITS" \
   --argjson repos "$ALL_REPOS" \
   '{
     user: $user,
@@ -122,5 +114,6 @@ jq -n \
     prs_reviewed: $prs_reviewed,
     issues_created: $issues_created,
     issues_closed: $issues_closed,
+    commits: $commits,
     repos_touched: $repos
   }'
