@@ -180,18 +180,21 @@ export async function run(): Promise<void> {
 				}
 			} catch (error) {
 				if (error instanceof Error) {
-					console.error(chalk.red(`Error: ${error.message}`));
+					process.stderr.write(chalk.red(`Error: ${error.message}\n`));
 					if (error.message.includes("claude")) {
-						console.error(
+						process.stderr.write(
 							chalk.yellow(
-								"Make sure Claude CLI is installed and authenticated: https://docs.anthropic.com/en/docs/claude-code",
+								"Make sure Claude CLI is installed and authenticated: https://docs.anthropic.com/en/docs/claude-code\n",
 							),
 						);
 					}
 				} else {
-					console.error(chalk.red("An unexpected error occurred:"), error);
+					process.stderr.write(
+						chalk.red(`An unexpected error occurred: ${error}\n`),
+					);
 				}
-				process.exit(1);
+				// Use exitCode instead of exit() to allow stdio to flush
+				process.exitCode = 1;
 			}
 		});
 
