@@ -20,7 +20,7 @@ gh auth login
 
 ```bash
 # Clone and install
-git clone https://github.com/moto-nrw/gh-tldr.git
+git clone https://github.com/yungweng/gh-tldr.git
 cd gh-tldr
 pnpm install
 pnpm build
