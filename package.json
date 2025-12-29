@@ -25,9 +25,14 @@
     "cli",
     "tldr",
     "activity",
-    "summary"
+    "summary",
+    "claude",
+    "ai",
+    "anthropic",
+    "standup",
+    "productivity"
   ],
-  "author": "",
+  "author": "yungweng",
   "license": "MIT",
   "repository": {
     "type": "git",
