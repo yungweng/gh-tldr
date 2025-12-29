@@ -1,6 +1,36 @@
+<p align="center">
+  <img src="https://img.shields.io/npm/v/gh-tldr.svg" alt="npm version">
+  <img src="https://img.shields.io/npm/l/gh-tldr.svg" alt="license">
+  <img src="https://img.shields.io/node/v/gh-tldr.svg" alt="node version">
+</p>
+
 # gh-tldr
 
-Generate a TL;DR summary of your GitHub activity using Claude.
+**AI-powered TL;DR of your GitHub activity**
+
+Stop manually tracking what you did this week. `gh-tldr` fetches your GitHub activity and uses Claude AI to generate a human-readable summary—perfect for standups, status updates, or weekly reports.
+
+<!-- TODO: Add demo GIF here -->
+<!-- <p align="center">
+  <img src="assets/demo.gif" alt="gh-tldr demo" width="600">
+</p> -->
+
+## Quick Start
+
+```bash
+npx gh-tldr
+```
+
+That's it. Follow the prompts.
+
+## Features
+
+- 📊 Summarizes PRs, reviews, commits, and issues
+- 🤖 Powered by Claude AI for natural language summaries
+- 🔄 Interactive or scripted mode
+- 📝 Multiple output formats (plain text, markdown, slack)
+- 🔒 Private repository support
+- 🌍 English and German output
 
 ## Prerequisites
 
@@ -8,35 +38,37 @@ Generate a TL;DR summary of your GitHub activity using Claude.
 - [GitHub CLI](https://cli.github.com/) (`gh`) - authenticated
 - [Claude Code](https://docs.anthropic.com/en/docs/claude-code) (`claude`)
 
-```bash
-# macOS
-brew install gh node
+<details>
+<summary>macOS quick setup</summary>
 
-# Authenticate gh
+```bash
+brew install gh node
 gh auth login
 ```
 
+</details>
+
 ## Installation
 
+The easiest way is `npx gh-tldr` (no install needed).
+
+<details>
+<summary>Alternative: Install globally</summary>
+
 ```bash
-# Clone and install
 git clone https://github.com/yungweng/gh-tldr.git
 cd gh-tldr
 pnpm install
 pnpm build
-
-# Link globally
 pnpm link --global
 ```
 
-Or via npx:
-```bash
-npx gh-tldr
-```
+</details>
 
-### Note for Aikido Safe-Chain Users
+<details>
+<summary>Note for Aikido Safe-Chain users</summary>
 
-If you use [Aikido Safe-Chain](https://github.com/AikidoSec/safe-chain), you may need to bypass it when running via npx:
+If you use [Aikido Safe-Chain](https://github.com/AikidoSec/safe-chain), you may need to bypass it:
 
 ```bash
 # Bash/Zsh
@@ -46,7 +78,7 @@ If you use [Aikido Safe-Chain](https://github.com/AikidoSec/safe-chain), you may
 command npx gh-tldr
 ```
 
-Or add an alias to your shell config:
+Or add an alias:
 ```bash
 # ~/.bashrc or ~/.zshrc
 alias gh-tldr='\npx gh-tldr'
@@ -55,11 +87,11 @@ alias gh-tldr='\npx gh-tldr'
 alias gh-tldr='command npx gh-tldr'
 ```
 
+</details>
+
 ## Usage
 
 ### Interactive Mode
-
-Run without arguments for guided prompts:
 
 ```bash
 gh-tldr
@@ -76,24 +108,19 @@ gh-tldr
 
 ### Direct Mode
 
-Use flags for scripting:
-
 ```bash
-# Basic usage
-gh-tldr --days 7 --english
-
-# All options
 gh-tldr [username] [options]
-
-Options:
-  -d, --days <n>       Time period in days (default: 1)
-  -e, --english        Output in English (default: German)
-  -f, --format <type>  Output format: plain|markdown|slack (default: slack)
-  -p, --public-only    Exclude private repositories
-  -m, --model <model>  Claude model (e.g., haiku, sonnet, opus)
-  -i, --interactive    Force interactive mode
-  -h, --help           Show help
 ```
+
+| Option | Description |
+|--------|-------------|
+| `-d, --days <n>` | Time period in days (default: 1) |
+| `-e, --english` | Output in English (default: German) |
+| `-f, --format <type>` | Output: `plain` \| `markdown` \| `slack` |
+| `-p, --public-only` | Exclude private repositories |
+| `-m, --model <model>` | Claude model (e.g., haiku, sonnet, opus) |
+| `-i, --interactive` | Force interactive mode |
+| `-h, --help` | Show help |
 
 ### Examples
 
@@ -111,7 +138,7 @@ gh-tldr --model haiku
 gh-tldr --days 30 --format markdown
 ```
 
-## Output
+## Example Output
 
 ```
 tl;dr 28.12.2025
@@ -132,15 +159,24 @@ Did several code reviews for the team, including the new API endpoint.
 ## Development
 
 ```bash
-# Run in dev mode
-pnpm dev
-
-# Build
-pnpm build
-
-# Type check
-pnpm typecheck
+pnpm dev        # Run in dev mode
+pnpm build      # Build
+pnpm typecheck  # Type check
 ```
+
+## Contributing
+
+Issues and PRs welcome! See [open issues](https://github.com/yungweng/gh-tldr/issues).
+
+## Links
+
+- [Repository](https://github.com/yungweng/gh-tldr)
+- [Issues](https://github.com/yungweng/gh-tldr/issues)
+- [npm](https://www.npmjs.com/package/gh-tldr)
+
+## Author
+
+Maintained by [@yungweng](https://github.com/yungweng)
 
 ## License
 
