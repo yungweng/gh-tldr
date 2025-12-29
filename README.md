@@ -29,9 +29,30 @@ pnpm build
 pnpm link --global
 ```
 
-Or via npx (once published):
+Or via npx:
 ```bash
 npx gh-tldr
+```
+
+### Note for Aikido Safe-Chain Users
+
+If you use [Aikido Safe-Chain](https://github.com/AikidoSec/safe-chain), you may need to bypass it when running via npx:
+
+```bash
+# Bash/Zsh
+\npx gh-tldr
+
+# Fish
+command npx gh-tldr
+```
+
+Or add an alias to your shell config:
+```bash
+# ~/.bashrc or ~/.zshrc
+alias gh-tldr='\npx gh-tldr'
+
+# ~/.config/fish/config.fish
+alias gh-tldr='command npx gh-tldr'
 ```
 
 ## Usage
