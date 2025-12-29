@@ -10,10 +10,9 @@
 
 Stop manually tracking what you did this week. `gh-tldr` fetches your GitHub activity and uses Claude AI to generate a human-readable summary—perfect for standups, status updates, or weekly reports.
 
-<!-- TODO: Add demo GIF here -->
-<!-- <p align="center">
-  <img src="assets/demo.gif" alt="gh-tldr demo" width="600">
-</p> -->
+<p align="center">
+  <img src="assets/demo.gif" alt="gh-tldr demo" width="700">
+</p>
 
 ## Quick Start
 
