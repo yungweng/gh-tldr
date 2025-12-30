@@ -1,0 +1,70 @@
+name: Publish to npm
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      dry-run:
+        description: "Dry run (build but don't publish)"
+        required: false
+        default: false
+        type: boolean
+
+permissions:
+  contents: read
+  id-token: write # Required for npm OIDC trusted publishing
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          registry-url: "https://registry.npmjs.org"
+          cache: "pnpm"
+
+      - name: Upgrade npm for OIDC support
+        run: npm install -g npm@latest
+
+      - name: Verify npm version (requires >= 11.5.1 for OIDC)
+        run: |
+          NPM_VERSION=$(npm --version)
+          echo "npm version: $NPM_VERSION"
+          node -e "
+            const [major, minor, patch] = '$NPM_VERSION'.split('.').map(Number);
+            const required = [11, 5, 1];
+            const ok = major > required[0] ||
+                       (major === required[0] && minor > required[1]) ||
+                       (major === required[0] && minor === required[1] && patch >= required[2]);
+            if (!ok) { console.error('npm >= 11.5.1 required for OIDC'); process.exit(1); }
+            console.log('npm version OK for OIDC');
+          "
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      - name: Publish to npm
+        if: ${{ !inputs.dry-run }}
+        run: pnpm publish --no-git-checks --access public
+
+      - name: Dry run summary
+        if: ${{ inputs.dry-run }}
+        run: |
+          echo "Dry run - package NOT published"
+          echo ""
+          echo "Package that would be published:"
+          echo "  - gh-tldr@$(node -p "require('./package.json').version")"
+          echo ""
+          echo "To publish for real, create a GitHub Release or run without dry-run"
