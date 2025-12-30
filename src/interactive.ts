@@ -1,4 +1,5 @@
 import { confirm, input, select } from "@inquirer/prompts";
+import { fetchUserOrgs, getAuthenticatedUser } from "./github.js";
 import type { Language, OutputFormat, Verbosity } from "./types.js";
 
 interface InteractiveOptions {
@@ -8,6 +9,7 @@ interface InteractiveOptions {
 	verbosity: Verbosity;
 	format: OutputFormat;
 	includePrivate: boolean;
+	selectedOrgs: string[] | null;
 	model: string;
 }
 
@@ -61,6 +63,28 @@ export async function runInteractive(): Promise<InteractiveOptions> {
 		default: true,
 	});
 
+	// Fetch available orgs for the user
+	const resolvedUsername = username || (await getAuthenticatedUser());
+	const userOrgs = await fetchUserOrgs(resolvedUsername);
+	const allScopes = [resolvedUsername, ...userOrgs];
+
+	// Build choices with "All" as first option
+	const ALL_VALUE = "__ALL__";
+	const scopeChoices = [
+		{ name: "All (no filter)", value: ALL_VALUE },
+		...allScopes.map((org) => ({ name: org, value: org })),
+	];
+
+	const scopeSelection = await select({
+		message: "Filter by scope",
+		choices: scopeChoices,
+		default: ALL_VALUE,
+	});
+
+	// If "All" selected, no filtering; otherwise filter to that single org
+	// For multi-org selection, user can use CLI --orgs flag
+	const selectedOrgs = scopeSelection === ALL_VALUE ? null : [scopeSelection];
+
 	const model = await input({
 		message: "Claude model (leave empty for default)",
 		default: "",
@@ -73,6 +97,7 @@ export async function runInteractive(): Promise<InteractiveOptions> {
 		verbosity,
 		format,
 		includePrivate,
+		selectedOrgs,
 		model,
 	};
 }

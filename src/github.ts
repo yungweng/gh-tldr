@@ -135,7 +135,7 @@ export async function getAuthenticatedUser(): Promise<string> {
 	return stdout.trim();
 }
 
-async function fetchUserOrgs(username: string): Promise<string[]> {
+export async function fetchUserOrgs(username: string): Promise<string[]> {
 	// First try authenticated user's orgs (includes private memberships)
 	try {
 		const authUser = await getAuthenticatedUser();
@@ -170,35 +170,25 @@ async function fetchReposCreatedSince(
 	username: string,
 	since: string,
 	publicOnly: boolean,
+	filterOrgs: string[] | null,
 ): Promise<RepoInfo[]> {
 	const sinceDate = new Date(since);
 	const repos: RepoInfo[] = [];
 
-	// Fetch user's own repos
-	try {
-		const visibility = publicOnly ? "public" : "all";
-		const { stdout } = await execa("gh", [
-			"api",
-			`users/${username}/repos?type=${visibility}&sort=created&direction=desc&per_page=100`,
-		]);
-		const userRepos = JSON.parse(stdout) as RawRepo[];
-		for (const repo of userRepos) {
-			if (new Date(repo.created_at) >= sinceDate) {
-				repos.push({ name: repo.name, org: repo.owner.login });
-			}
-		}
-	} catch {
-		// Ignore errors for user repos
-	}
+	// Determine which orgs to check
+	const orgsToCheck = filterOrgs ?? [
+		username,
+		...(await fetchUserOrgs(username)),
+	];
 
-	// Fetch repos from user's orgs
-	const orgs = await fetchUserOrgs(username);
-	for (const org of orgs) {
+	for (const org of orgsToCheck) {
 		try {
-			const { stdout } = await execa("gh", [
-				"api",
-				`orgs/${org}/repos?sort=created&direction=desc&per_page=100`,
-			]);
+			const isUser = org === username;
+			const endpoint = isUser
+				? `users/${username}/repos?type=${publicOnly ? "public" : "all"}&sort=created&direction=desc&per_page=100`
+				: `orgs/${org}/repos?sort=created&direction=desc&per_page=100`;
+
+			const { stdout } = await execa("gh", ["api", endpoint]);
 			const orgRepos = JSON.parse(stdout) as RawRepo[];
 			for (const repo of orgRepos) {
 				if (new Date(repo.created_at) >= sinceDate) {
@@ -222,10 +212,16 @@ export async function fetchGitHubActivity(
 	username: string,
 	days: number,
 	publicOnly: boolean,
+	filterOrgs: string[] | null = null,
 ): Promise<GitHubActivity> {
 	const since = getSinceDate(days);
 	const today = formatDate(new Date());
 	const visibilityFilter = publicOnly ? " is:public" : "";
+
+	// Build org filter string: "org:X org:Y" (implicit OR)
+	const orgFilter = filterOrgs
+		? ` ${filterOrgs.map((o) => `org:${o}`).join(" ")}`
+		: "";
 
 	// Fetch all data in parallel with pagination
 	const [
@@ -238,24 +234,24 @@ export async function fetchGitHubActivity(
 		repos_created,
 	] = await Promise.all([
 		ghApiPaginated<RawPR>("search/issues", {
-			q: `author:${username} type:pr created:>=${since}${visibilityFilter}`,
+			q: `author:${username} type:pr created:>=${since}${visibilityFilter}${orgFilter}`,
 		}),
 		ghApiPaginated<RawPR>("search/issues", {
-			q: `author:${username} type:pr merged:>=${since}${visibilityFilter}`,
+			q: `author:${username} type:pr merged:>=${since}${visibilityFilter}${orgFilter}`,
 		}),
 		ghApiPaginated<RawPR>("search/issues", {
-			q: `reviewed-by:${username} type:pr created:>=${since} -author:${username}${visibilityFilter}`,
+			q: `reviewed-by:${username} type:pr created:>=${since} -author:${username}${visibilityFilter}${orgFilter}`,
 		}),
 		ghApiPaginated<RawPR>("search/issues", {
-			q: `author:${username} type:issue created:>=${since}${visibilityFilter}`,
+			q: `author:${username} type:issue created:>=${since}${visibilityFilter}${orgFilter}`,
 		}),
 		ghApiPaginated<RawPR>("search/issues", {
-			q: `author:${username} type:issue closed:>=${since}${visibilityFilter}`,
+			q: `author:${username} type:issue closed:>=${since}${visibilityFilter}${orgFilter}`,
 		}),
 		ghApiPaginated<RawCommit>("search/commits", {
-			q: `author:${username} committer-date:>=${since}`,
+			q: `author:${username} committer-date:>=${since}${orgFilter}`,
 		}),
-		fetchReposCreatedSince(username, since, publicOnly),
+		fetchReposCreatedSince(username, since, publicOnly, filterOrgs),
 	]);
 
 	const prs_created = prsCreatedItems.map(parsePR);
