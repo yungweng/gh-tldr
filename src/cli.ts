@@ -54,6 +54,7 @@ interface CliOptions {
 	publicOnly: boolean;
 	interactive: boolean;
 	verbosity: string;
+	orgs?: string;
 	model?: string;
 }
 
@@ -69,19 +70,24 @@ async function execute(
 	format: OutputFormat,
 	publicOnly: boolean,
 	verbosity: Verbosity,
+	filterOrgs: string[] | null,
 	model?: string,
 ): Promise<void> {
 	// Resolve username
 	const resolvedUsername = username || (await getAuthenticatedUser());
 
+	const scopeInfo = filterOrgs ? ` in ${filterOrgs.join(", ")}` : "";
 	console.error(
-		chalk.yellow(`Fetching GitHub activity for ${resolvedUsername}...`),
+		chalk.yellow(
+			`Fetching GitHub activity for ${resolvedUsername}${scopeInfo}...`,
+		),
 	);
 
 	const activity = await fetchGitHubActivity(
 		resolvedUsername,
 		days,
 		publicOnly,
+		filterOrgs,
 	);
 
 	if (!hasActivity(activity)) {
@@ -139,6 +145,10 @@ export async function run(): Promise<void> {
 			"normal",
 		)
 		.option(
+			"-o, --orgs <orgs>",
+			"Filter by organizations/accounts (comma-separated)",
+		)
+		.option(
 			"-m, --model <model>",
 			"Claude model to use (e.g., sonnet, opus, haiku)",
 		)
@@ -160,6 +170,7 @@ export async function run(): Promise<void> {
 						answers.format,
 						!answers.includePrivate,
 						answers.verbosity,
+						answers.selectedOrgs,
 						answers.model || undefined,
 					);
 				} else {
@@ -168,6 +179,14 @@ export async function run(): Promise<void> {
 					const lang: Language = options.english ? "en" : "de";
 					const format = options.format as OutputFormat;
 
+					// Parse orgs flag
+					const filterOrgs = options.orgs
+						? options.orgs
+								.split(",")
+								.map((o) => o.trim())
+								.filter(Boolean)
+						: null;
+
 					await execute(
 						username || "",
 						days,
@@ -175,6 +194,7 @@ export async function run(): Promise<void> {
 						format,
 						options.publicOnly,
 						validateVerbosity(options.verbosity),
+						filterOrgs && filterOrgs.length > 0 ? filterOrgs : null,
 						options.model,
 					);
 				}
