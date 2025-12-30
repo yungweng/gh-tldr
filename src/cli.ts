@@ -1,3 +1,4 @@
+import { createRequire } from "node:module";
 import chalk from "chalk";
 import { Command } from "commander";
 import { generateSummaryText } from "./claude.js";
@@ -5,6 +6,9 @@ import { fetchGitHubActivity, getAuthenticatedUser } from "./github.js";
 import { runInteractive } from "./interactive.js";
 import { formatActivity, hasActivity } from "./output.js";
 import type { Language, OutputFormat, Verbosity } from "./types.js";
+
+const require = createRequire(import.meta.url);
+const { version } = require("../package.json") as { version: string };
 
 async function checkDependencies(): Promise<void> {
 	const { execa } = await import("execa");
@@ -128,7 +132,7 @@ export async function run(): Promise<void> {
 	program
 		.name("gh-tldr")
 		.description("Generate a TL;DR summary of your GitHub activity")
-		.version("1.0.0")
+		.version(version)
 		.argument("[username]", "GitHub username (defaults to authenticated user)")
 		.option("-d, --days <n>", "Time period in days", "1")
 		.option("-e, --english", "Output in English (default: German)", false)
