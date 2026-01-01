@@ -60,6 +60,7 @@ interface CliOptions {
 	verbosity: string;
 	orgs?: string;
 	model?: string;
+	prompt?: string;
 }
 
 function validateVerbosity(value: string): Verbosity {
@@ -76,6 +77,7 @@ async function execute(
 	verbosity: Verbosity,
 	filterOrgs: string[] | null,
 	model?: string,
+	customPrompt?: string,
 ): Promise<void> {
 	// Resolve username
 	const resolvedUsername = username || (await getAuthenticatedUser());
@@ -117,6 +119,7 @@ async function execute(
 		lang,
 		verbosity,
 		model,
+		customPrompt,
 	);
 
 	console.log("");
@@ -156,6 +159,10 @@ export async function run(): Promise<void> {
 			"-m, --model <model>",
 			"Claude model to use (e.g., sonnet, opus, haiku)",
 		)
+		.option(
+			"-P, --prompt <text>",
+			"Custom instructions for Claude to consider when summarizing",
+		)
 		.action(async (username: string | undefined, options: CliOptions) => {
 			try {
 				await checkDependencies();
@@ -176,6 +183,7 @@ export async function run(): Promise<void> {
 						answers.verbosity,
 						answers.selectedOrgs,
 						answers.model || undefined,
+						answers.customPrompt || undefined,
 					);
 				} else {
 					// Direct mode
@@ -200,6 +208,7 @@ export async function run(): Promise<void> {
 						validateVerbosity(options.verbosity),
 						filterOrgs && filterOrgs.length > 0 ? filterOrgs : null,
 						options.model,
+						options.prompt,
 					);
 				}
 			} catch (error) {

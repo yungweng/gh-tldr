@@ -7,16 +7,26 @@ const wordLimits: Record<Verbosity, Record<Language, string>> = {
 	detailed: { en: "150-200 word", de: "150-200 Wörter" },
 };
 
-function buildPrompt(lang: Language, verbosity: Verbosity): string {
+function buildPrompt(
+	lang: Language,
+	verbosity: Verbosity,
+	customPrompt?: string,
+): string {
 	const limit = wordLimits[verbosity][lang];
 
+	const customSection = customPrompt?.trim()
+		? lang === "en"
+			? `\n\nAdditional focus: ${customPrompt}`
+			: `\n\nZusätzlicher Fokus: ${customPrompt}`
+		: "";
+
 	if (lang === "en") {
-		return `Based on this GitHub activity data, write a summary of what was accomplished. STRICT LIMIT: ${limit}. Mention specific PR/issue titles. If stats are available, include the lines of code changed (additions/deletions) as a brief mention. Casual tone, no bullet points, no emojis.
+		return `Based on this GitHub activity data, write a summary of what was accomplished. STRICT LIMIT: ${limit}. Mention specific PR/issue titles. If stats are available, include the lines of code changed (additions/deletions) as a brief mention. Casual tone, no bullet points, no emojis.${customSection}
 
 GitHub Activity Data:`;
 	}
 
-	return `Basierend auf diesen GitHub-Aktivitätsdaten, schreibe eine Zusammenfassung was gemacht wurde. STRIKTES LIMIT: ${limit}. Erwähne konkret die PR/Issue-Titel. Falls Stats verfügbar sind, erwähne kurz die geänderten Codezeilen (Additions/Deletions). Lockerer Ton, keine Aufzählungen, keine Emojis.
+	return `Basierend auf diesen GitHub-Aktivitätsdaten, schreibe eine Zusammenfassung was gemacht wurde. STRIKTES LIMIT: ${limit}. Erwähne konkret die PR/Issue-Titel. Falls Stats verfügbar sind, erwähne kurz die geänderten Codezeilen (Additions/Deletions). Lockerer Ton, keine Aufzählungen, keine Emojis.${customSection}
 
 GitHub-Aktivitätsdaten:`;
 }
@@ -26,8 +36,9 @@ export async function generateSummaryText(
 	lang: Language,
 	verbosity: Verbosity = "normal",
 	model?: string,
+	customPrompt?: string,
 ): Promise<string> {
-	const prompt = buildPrompt(lang, verbosity);
+	const prompt = buildPrompt(lang, verbosity, customPrompt);
 	const fullPrompt = `${prompt}\n${JSON.stringify(activity, null, 2)}`;
 
 	const args = ["-p", "-", "--output-format", "text"];

@@ -11,6 +11,7 @@ interface InteractiveOptions {
 	includePrivate: boolean;
 	selectedOrgs: string[] | null;
 	model: string;
+	customPrompt: string;
 }
 
 export async function runInteractive(): Promise<InteractiveOptions> {
@@ -90,6 +91,11 @@ export async function runInteractive(): Promise<InteractiveOptions> {
 		default: "",
 	});
 
+	const customPrompt = await input({
+		message: "Any specific focus for the summary? (optional)",
+		default: "",
+	});
+
 	return {
 		username,
 		days,
@@ -99,5 +105,6 @@ export async function runInteractive(): Promise<InteractiveOptions> {
 		includePrivate,
 		selectedOrgs,
 		model,
+		customPrompt,
 	};
 }
