@@ -25,10 +25,13 @@ That's it. Follow the prompts.
 ## Features
 
 - 📊 Summarizes PRs, reviews, commits, and issues
+- 📈 Tracks lines of code changed (additions/deletions)
 - 🤖 Powered by Claude AI for natural language summaries
+- 🎯 Custom prompt support for focused summaries
 - 🔄 Interactive or scripted mode
 - 📝 Multiple output formats (plain text, markdown, slack)
 - 🔒 Private repository support
+- 🏢 Organization/scope filtering
 - 🌍 English and German output
 
 ## Prerequisites
@@ -100,9 +103,12 @@ gh-tldr
 ? GitHub username (leave empty for authenticated user)
 ? Time period › Last 24 hours / Last 7 days / Last 30 days
 ? Language › English / German
+? Summary verbosity › Brief / Normal / Detailed
 ? Output format › Plain text / Markdown / Slack
 ? Include private repos? (y/N)
+? Filter by scope › All / org-name / username
 ? Claude model (leave empty for default)
+? Any specific focus for the summary? (optional)
 ```
 
 ### Direct Mode
@@ -116,8 +122,11 @@ gh-tldr [username] [options]
 | `-d, --days <n>` | Time period in days (default: 1) |
 | `-e, --english` | Output in English (default: German) |
 | `-f, --format <type>` | Output: `plain` \| `markdown` \| `slack` |
+| `-v, --verbosity <level>` | Summary length: `brief` \| `normal` \| `detailed` |
 | `-p, --public-only` | Exclude private repositories |
+| `-o, --orgs <orgs>` | Filter by organizations/accounts (comma-separated) |
 | `-m, --model <model>` | Claude model (e.g., haiku, sonnet, opus) |
+| `-P, --prompt <text>` | Custom instructions for Claude |
 | `-i, --interactive` | Force interactive mode |
 | `-h, --help` | Show help |
 
@@ -130,8 +139,14 @@ gh-tldr --days 7 --english
 # Specific user, public repos only
 gh-tldr yungweng --public-only
 
-# Use Haiku model for faster results
-gh-tldr --model haiku
+# Filter by organization
+gh-tldr --orgs my-company,my-org
+
+# Custom focus for standup
+gh-tldr -P "Focus on bug fixes and blockers"
+
+# Brief summary with Haiku model
+gh-tldr --verbosity brief --model haiku
 
 # Markdown output for documentation
 gh-tldr --days 30 --format markdown
@@ -147,6 +162,7 @@ tl;dr 28.12.2025
 • 2 PRs merged (repo-a)
 • 1 issue closed (repo-d)
 • 12 commits (repo-a, repo-b)
+• +1,234 / -567 lines changed (15 files)
 
 Repos: org/repo-a, org/repo-b, org/repo-c, org/repo-d
 
