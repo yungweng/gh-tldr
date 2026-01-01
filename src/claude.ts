@@ -11,12 +11,12 @@ function buildPrompt(lang: Language, verbosity: Verbosity): string {
 	const limit = wordLimits[verbosity][lang];
 
 	if (lang === "en") {
-		return `Based on this GitHub activity data, write a summary of what was accomplished. STRICT LIMIT: ${limit}. Mention specific PR/issue titles. Casual tone, no bullet points, no emojis.
+		return `Based on this GitHub activity data, write a summary of what was accomplished. STRICT LIMIT: ${limit}. Mention specific PR/issue titles. If stats are available, include the lines of code changed (additions/deletions) as a brief mention. Casual tone, no bullet points, no emojis.
 
 GitHub Activity Data:`;
 	}
 
-	return `Basierend auf diesen GitHub-Aktivitätsdaten, schreibe eine Zusammenfassung was gemacht wurde. STRIKTES LIMIT: ${limit}. Erwähne konkret die PR/Issue-Titel. Lockerer Ton, keine Aufzählungen, keine Emojis.
+	return `Basierend auf diesen GitHub-Aktivitätsdaten, schreibe eine Zusammenfassung was gemacht wurde. STRIKTES LIMIT: ${limit}. Erwähne konkret die PR/Issue-Titel. Falls Stats verfügbar sind, erwähne kurz die geänderten Codezeilen (Additions/Deletions). Lockerer Ton, keine Aufzählungen, keine Emojis.
 
 GitHub-Aktivitätsdaten:`;
 }
