@@ -1,4 +1,5 @@
 import type {
+	CodeStats,
 	Commit,
 	GitHubActivity,
 	Language,
@@ -68,6 +69,32 @@ function calculateWorkSession(
 function getRepoNames(items: { repo: string }[]): string {
 	const repos = [...new Set(items.map((i) => i.repo))];
 	return repos.join(", ");
+}
+
+function formatNumber(n: number): string {
+	return n.toLocaleString("en-US");
+}
+
+function formatLinesChanged(
+	stats: CodeStats | undefined,
+	lang: Language,
+	format: OutputFormat,
+): string | null {
+	if (!stats || (stats.totalAdditions === 0 && stats.totalDeletions === 0)) {
+		return null;
+	}
+
+	const additions = formatNumber(stats.totalAdditions);
+	const deletions = formatNumber(stats.totalDeletions);
+	const files = formatNumber(stats.totalChangedFiles);
+	const filesLabel = lang === "en" ? "files" : "Dateien";
+
+	const text = `+${additions} / -${deletions} lines (${files} ${filesLabel})`;
+
+	if (format === "markdown") {
+		return `- **${text}**`;
+	}
+	return `• ${text}`;
 }
 
 function formatActivityLine(
@@ -158,6 +185,7 @@ export function formatActivity(
 			lang,
 			format,
 		),
+		formatLinesChanged(activity.stats, lang, format),
 	].filter(Boolean) as string[];
 
 	if (activityLines.length === 0) {
