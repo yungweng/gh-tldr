@@ -5,6 +5,9 @@ export interface PullRequest {
 	number: number;
 	state?: string;
 	url: string;
+	additions?: number;
+	deletions?: number;
+	changedFiles?: number;
 }
 
 export interface Issue {
@@ -28,6 +31,13 @@ export interface RepoInfo {
 	org: string;
 }
 
+export interface CodeStats {
+	totalAdditions: number;
+	totalDeletions: number;
+	totalChangedFiles: number;
+	netLines: number;
+}
+
 export interface GitHubActivity {
 	user: string;
 	date: string;
@@ -40,6 +50,7 @@ export interface GitHubActivity {
 	commits: Commit[];
 	repos_created: RepoInfo[];
 	repos_touched: string[];
+	stats?: CodeStats;
 }
 
 export interface Options {

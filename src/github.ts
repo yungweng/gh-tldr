@@ -1,5 +1,6 @@
 import { execa } from "execa";
 import type {
+	CodeStats,
 	Commit,
 	GitHubActivity,
 	Issue,
@@ -97,6 +98,12 @@ interface RawRepo {
 	html_url: string;
 }
 
+interface RawPRDetails {
+	additions: number;
+	deletions: number;
+	changed_files: number;
+}
+
 function parsePR(item: RawPR): PullRequest {
 	const urlParts = item.repository_url.split("/");
 	return {
@@ -127,6 +134,71 @@ function parseCommit(item: RawCommit): Commit {
 		message: item.commit.message.split("\n")[0],
 		url: item.html_url,
 		date: item.commit.author.date,
+	};
+}
+
+async function fetchPRDetails(
+	org: string,
+	repo: string,
+	number: number,
+): Promise<{ additions: number; deletions: number; changedFiles: number }> {
+	const { stdout } = await execa("gh", [
+		"api",
+		`repos/${org}/${repo}/pulls/${number}`,
+	]);
+	const data = JSON.parse(stdout) as RawPRDetails;
+	return {
+		additions: data.additions,
+		deletions: data.deletions,
+		changedFiles: data.changed_files,
+	};
+}
+
+async function enrichPRsWithStats(prs: PullRequest[]): Promise<PullRequest[]> {
+	const results = await Promise.allSettled(
+		prs.map(async (pr) => {
+			const stats = await fetchPRDetails(pr.org, pr.repo, pr.number);
+			return { ...pr, ...stats };
+		}),
+	);
+
+	return results.map((result, index) => {
+		if (result.status === "fulfilled") {
+			return result.value;
+		}
+		// On failure, return original PR without stats
+		return prs[index];
+	});
+}
+
+function calculateStats(prs: PullRequest[]): CodeStats {
+	// Deduplicate PRs by org/repo/number to avoid double-counting
+	const seen = new Set<string>();
+	const uniquePRs = prs.filter((pr) => {
+		const key = `${pr.org}/${pr.repo}#${pr.number}`;
+		if (seen.has(key)) return false;
+		seen.add(key);
+		return true;
+	});
+
+	const totalAdditions = uniquePRs.reduce(
+		(sum, pr) => sum + (pr.additions ?? 0),
+		0,
+	);
+	const totalDeletions = uniquePRs.reduce(
+		(sum, pr) => sum + (pr.deletions ?? 0),
+		0,
+	);
+	const totalChangedFiles = uniquePRs.reduce(
+		(sum, pr) => sum + (pr.changedFiles ?? 0),
+		0,
+	);
+
+	return {
+		totalAdditions,
+		totalDeletions,
+		totalChangedFiles,
+		netLines: totalAdditions - totalDeletions,
 	};
 }
 
@@ -254,12 +326,21 @@ export async function fetchGitHubActivity(
 		fetchReposCreatedSince(username, since, publicOnly, filterOrgs),
 	]);
 
-	const prs_created = prsCreatedItems.map(parsePR);
-	const prs_merged = prsMergedItems.map(parsePR);
+	const prs_created_raw = prsCreatedItems.map(parsePR);
+	const prs_merged_raw = prsMergedItems.map(parsePR);
 	const prs_reviewed = prsReviewedItems.map(parsePR);
 	const issues_created = issuesCreatedItems.map(parseIssue);
 	const issues_closed = issuesClosedItems.map(parseIssue);
 	const commits = commitsItems.map(parseCommit);
+
+	// Enrich PRs with LOC stats (created and merged, in parallel)
+	const [prs_created, prs_merged] = await Promise.all([
+		enrichPRsWithStats(prs_created_raw),
+		enrichPRsWithStats(prs_merged_raw),
+	]);
+
+	// Calculate aggregate stats from all authored PRs (deduplicated)
+	const stats = calculateStats([...prs_created, ...prs_merged]);
 
 	// Extract unique repos touched
 	const allRepos = [
@@ -294,5 +375,6 @@ export async function fetchGitHubActivity(
 		commits,
 		repos_created,
 		repos_touched,
+		stats,
 	};
 }
