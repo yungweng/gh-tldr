@@ -193,6 +193,10 @@ Issues and PRs welcome! See [open issues](https://github.com/yungweng/gh-tldr/is
 
 Maintained by [@yungweng](https://github.com/yungweng)
 
+## Star History
+
+[![Star History Chart](https://api.star-history.com/svg?repos=yungweng/gh-tldr&type=Date)](https://star-history.com/#yungweng/gh-tldr&Date)
+
 ## License
 
 MIT
