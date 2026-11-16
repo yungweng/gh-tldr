@@ -58,7 +58,7 @@ The easiest way is `npx gh-tldr` (no install needed).
 <summary>Alternative: Install globally</summary>
 
 ```bash
-git clone https://github.com/yungweng/gh-tldr.git
+git clone https://github.com/yonnock/gh-tldr.git
 cd gh-tldr
 pnpm install
 pnpm build
@@ -137,7 +137,7 @@ gh-tldr [username] [options]
 gh-tldr --days 7 --english
 
 # Specific user, public repos only
-gh-tldr yungweng --public-only
+gh-tldr yonnock --public-only
 
 # Filter by organization
 gh-tldr --orgs my-company,my-org
@@ -181,21 +181,21 @@ pnpm typecheck  # Type check
 
 ## Contributing
 
-Issues and PRs welcome! See [open issues](https://github.com/yungweng/gh-tldr/issues).
+Issues and PRs welcome! See [open issues](https://github.com/yonnock/gh-tldr/issues).
 
 ## Links
 
-- [Repository](https://github.com/yungweng/gh-tldr)
-- [Issues](https://github.com/yungweng/gh-tldr/issues)
+- [Repository](https://github.com/yonnock/gh-tldr)
+- [Issues](https://github.com/yonnock/gh-tldr/issues)
 - [npm](https://www.npmjs.com/package/gh-tldr)
 
 ## Author
 
-Maintained by [@yungweng](https://github.com/yungweng)
+Maintained by [@yonnock](https://github.com/yonnock)
 
 ## Star History
 
-[![Star History Chart](https://api.star-history.com/svg?repos=yungweng/gh-tldr&type=Date)](https://star-history.com/#yungweng/gh-tldr&Date)
+[![Star History Chart](https://api.star-history.com/svg?repos=yonnock/gh-tldr&type=Date)](https://star-history.com/#yonnock/gh-tldr&Date)
 
 ## License
 
