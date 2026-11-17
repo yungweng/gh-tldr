@@ -32,15 +32,15 @@
     "standup",
     "productivity"
   ],
-  "author": "yungweng",
+  "author": "yonnock",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "https://github.com/yungweng/gh-tldr.git"
+    "url": "https://github.com/yonnock/gh-tldr.git"
   },
-  "homepage": "https://github.com/yungweng/gh-tldr#readme",
+  "homepage": "https://github.com/yonnock/gh-tldr#readme",
   "bugs": {
-    "url": "https://github.com/yungweng/gh-tldr/issues"
+    "url": "https://github.com/yonnock/gh-tldr/issues"
   },
   "packageManager": "pnpm@10.26.2",
   "engines": {
